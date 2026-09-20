@@ -140,13 +140,9 @@ public static class StructuralExtractor
         return new GenericParameter(parameter.Name, constraints);
     }
 
-    private static readonly SymbolDisplayFormat KeywordFormat =
-        SymbolDisplayFormat.MinimallyQualifiedFormat.WithMiscellaneousOptions(
-            SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
-
     private static string SimpleName(ITypeSymbol type) =>
         type.SpecialType != SpecialType.None
-            ? type.ToDisplayString(KeywordFormat)
+            ? type.ToDisplayString()
             : type is INamedTypeSymbol named ? named.Name : type.ToDisplayString();
 
     private static TypeReference ToTypeReference(INamedTypeSymbol type) =>
