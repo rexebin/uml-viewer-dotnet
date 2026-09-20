@@ -207,6 +207,19 @@ public class StructuralExtractorTests(SampleProjectCompilationFixture fixture)
         Assert.Equal(["System.Collections.Generic"], shiftsFile.Usings);
     }
 
+    [Fact]
+    public void Extract_Files_ExcludesStaticAndAliasedUsingsButKeepsPlainUsings()
+    {
+        var model = Extract();
+
+        var shiftsFile = FindFile(model, "fixtures/SampleProject/Habitats/ZooKeeper.Shifts.cs");
+
+        Assert.DoesNotContain("System.Math", shiftsFile.Usings);
+        Assert.DoesNotContain("Ints", shiftsFile.Usings);
+        Assert.DoesNotContain("System.Collections.Generic.List<int>", shiftsFile.Usings);
+        Assert.Contains("System.Collections.Generic", shiftsFile.Usings);
+    }
+
     private static FileEntry FindFile(StructuralModel model, string relativePath) =>
         Assert.Single(model.Files, f => f.Path.EndsWith(relativePath, StringComparison.Ordinal));
 
