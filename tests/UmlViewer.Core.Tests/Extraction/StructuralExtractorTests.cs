@@ -260,6 +260,19 @@ public class StructuralExtractorTests(SampleProjectCompilationFixture fixture)
     }
 
     [Fact]
+    public void Extract_FieldReferencingProjectType_ProducesNonCollectionAssociation()
+    {
+        var model = Extract();
+
+        var association = Assert.Single(model.Associations, a =>
+            a.From.Namespace == "SampleProject.Habitats" && a.From.Name == "ZooKeeper" && a.MemberName == "AssignedZoo");
+
+        Assert.Equal("SampleProject.Habitats", association.To.Namespace);
+        Assert.Equal("Zoo", association.To.Name);
+        Assert.False(association.IsCollection);
+    }
+
+    [Fact]
     public void Extract_BclTypedProperty_ProducesNoAssociation()
     {
         var model = Extract();

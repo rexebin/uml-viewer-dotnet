@@ -7,4 +7,6 @@ public partial class ZooKeeper : IIdentifiable
     public int Id { get; init; }
 
     public string Name { get; init; } = string.Empty;
+
+    public Zoo? AssignedZoo;
 }

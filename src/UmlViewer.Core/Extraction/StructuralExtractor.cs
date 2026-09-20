@@ -163,36 +163,45 @@ public static class StructuralExtractor
 
         foreach (var member in type.GetMembers())
         {
-            if (member.IsImplicitlyDeclared)
+            var association = ToAssociationEntry(member, from, compilationAssembly);
+            if (association is not null)
             {
-                continue;
+                yield return association;
             }
-
-            var memberType = member switch
-            {
-                IFieldSymbol { IsConst: false } field => field.Type,
-                IPropertySymbol { IsIndexer: false } property => property.Type,
-                _ => null,
-            };
-
-            if (memberType is null)
-            {
-                continue;
-            }
-
-            var (target, isCollection) = ResolveAssociationTarget(memberType);
-
-            if (target is null || !SymbolEqualityComparer.Default.Equals(target.ContainingAssembly, compilationAssembly))
-            {
-                continue;
-            }
-
-            yield return new AssociationEntry(
-                From: from,
-                To: new TypeRef(target.ContainingNamespace.ToDisplayString(), target.Name),
-                MemberName: member.Name,
-                IsCollection: isCollection);
         }
+    }
+
+    private static AssociationEntry? ToAssociationEntry(ISymbol member, TypeRef from, IAssemblySymbol compilationAssembly)
+    {
+        if (member.IsImplicitlyDeclared)
+        {
+            return null;
+        }
+
+        var memberType = member switch
+        {
+            IFieldSymbol { IsConst: false } field => field.Type,
+            IPropertySymbol { IsIndexer: false } property => property.Type,
+            _ => null,
+        };
+
+        if (memberType is null)
+        {
+            return null;
+        }
+
+        var (target, isCollection) = ResolveAssociationTarget(memberType);
+
+        if (target is null || !SymbolEqualityComparer.Default.Equals(target.ContainingAssembly, compilationAssembly))
+        {
+            return null;
+        }
+
+        return new AssociationEntry(
+            From: from,
+            To: new TypeRef(target.ContainingNamespace.ToDisplayString(), target.Name),
+            MemberName: member.Name,
+            IsCollection: isCollection);
     }
 
     private static (INamedTypeSymbol? Target, bool IsCollection) ResolveAssociationTarget(ITypeSymbol memberType)
