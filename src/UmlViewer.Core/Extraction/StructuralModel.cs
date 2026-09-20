@@ -2,7 +2,8 @@ namespace UmlViewer.Core.Extraction;
 
 public sealed record StructuralModel(
     IReadOnlyList<FileEntry> Files,
-    IReadOnlyList<TypeEntry> Types);
+    IReadOnlyList<TypeEntry> Types,
+    IReadOnlyList<AssociationEntry> Associations);
 
 public sealed record FileEntry(
     string Path,
@@ -36,3 +37,9 @@ public sealed record TypeRef(
 public sealed record EnumMember(
     string Name,
     long Value);
+
+public sealed record AssociationEntry(
+    TypeRef From,
+    TypeRef To,
+    string MemberName,
+    bool IsCollection);

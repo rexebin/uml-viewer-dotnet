@@ -8,7 +8,9 @@ public static class StructuralExtractor
 {
     public static StructuralModel Extract(Compilation compilation)
     {
-        var types = WalkNamespace(compilation.GlobalNamespace)
+        var declaredTypes = WalkNamespace(compilation.GlobalNamespace).ToList();
+
+        var types = declaredTypes
             .Select(ToTypeEntry)
             .ToList();
 
@@ -16,7 +18,11 @@ public static class StructuralExtractor
             .Select(ToFileEntry)
             .ToList();
 
-        return new StructuralModel(Files: files, Types: types);
+        var associations = declaredTypes
+            .SelectMany(type => AssociationsOf(type, compilation.Assembly))
+            .ToList();
+
+        return new StructuralModel(Files: files, Types: types, Associations: associations);
     }
 
     private static FileEntry ToFileEntry(SyntaxTree tree)
@@ -150,6 +156,71 @@ public static class StructuralExtractor
             Namespace: type.ContainingNamespace.ToDisplayString(),
             Name: type.Name,
             TypeArguments: type.TypeArguments.Select(SimpleName).ToList());
+
+    private static IEnumerable<AssociationEntry> AssociationsOf(INamedTypeSymbol type, IAssemblySymbol compilationAssembly)
+    {
+        var from = new TypeRef(type.ContainingNamespace.ToDisplayString(), type.Name);
+
+        foreach (var member in type.GetMembers())
+        {
+            if (member.IsImplicitlyDeclared)
+            {
+                continue;
+            }
+
+            var memberType = member switch
+            {
+                IFieldSymbol { IsConst: false } field => field.Type,
+                IPropertySymbol { IsIndexer: false } property => property.Type,
+                _ => null,
+            };
+
+            if (memberType is null)
+            {
+                continue;
+            }
+
+            var (target, isCollection) = ResolveAssociationTarget(memberType);
+
+            if (target is null || !SymbolEqualityComparer.Default.Equals(target.ContainingAssembly, compilationAssembly))
+            {
+                continue;
+            }
+
+            yield return new AssociationEntry(
+                From: from,
+                To: new TypeRef(target.ContainingNamespace.ToDisplayString(), target.Name),
+                MemberName: member.Name,
+                IsCollection: isCollection);
+        }
+    }
+
+    private static (INamedTypeSymbol? Target, bool IsCollection) ResolveAssociationTarget(ITypeSymbol memberType)
+    {
+        var elementType = EnumerableElementTypeOf(memberType);
+        if (elementType is not null)
+        {
+            return (elementType as INamedTypeSymbol, true);
+        }
+
+        return (memberType as INamedTypeSymbol, false);
+    }
+
+    private static ITypeSymbol? EnumerableElementTypeOf(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            return arrayType.ElementType;
+        }
+
+        var enumerableInterface = SelfAndInterfaces(type)
+            .FirstOrDefault(i => i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T);
+
+        return enumerableInterface?.TypeArguments[0];
+    }
+
+    private static IEnumerable<INamedTypeSymbol> SelfAndInterfaces(ITypeSymbol type) =>
+        type is INamedTypeSymbol named ? [named, .. named.AllInterfaces] : type.AllInterfaces;
 
     private static string KindOf(INamedTypeSymbol type) => type.TypeKind switch
     {

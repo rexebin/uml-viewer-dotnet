@@ -21,5 +21,5 @@ The type entry that lexically encloses a nested type. A top-level type has no co
 _Avoid_: parent, outer type
 
 **Association**:
-A reference from one type to another via a field, property, or parameter type. Deliberately out of scope for the current MVP.
+A reference from one type to another via a declared (non-inherited, non-compiler-generated) field or property, resolved to another project-declared type. Method-parameter references are not associations in this model. In scope as of the association-discovery pass (#10); no composition/aggregation distinction is recorded.
 _Avoid_: dependency, relationship (too broad — this project also uses "dependency" for project-to-project references, a distinct future concept)

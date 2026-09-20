@@ -220,6 +220,73 @@ public class StructuralExtractorTests(SampleProjectCompilationFixture fixture)
         Assert.Contains("System.Collections.Generic", shiftsFile.Usings);
     }
 
+    [Fact]
+    public void Extract_PropertyReferencingProjectType_ProducesNonCollectionAssociation()
+    {
+        var model = Extract();
+
+        var association = Assert.Single(model.Associations, a =>
+            a.From.Namespace == "SampleProject.Animals" && a.From.Name == "AnimalRecord" && a.MemberName == "Kind");
+
+        Assert.Equal("SampleProject.Animals", association.To.Namespace);
+        Assert.Equal("AnimalKind", association.To.Name);
+        Assert.False(association.IsCollection);
+    }
+
+    [Fact]
+    public void Extract_ArrayPropertyOfProjectType_ProducesCollectionAssociation()
+    {
+        var model = Extract();
+
+        var association = Assert.Single(model.Associations, a =>
+            a.From.Namespace == "SampleProject.Habitats" && a.From.Name == "Zoo" && a.MemberName == "Animals");
+
+        Assert.Equal("SampleProject.Animals", association.To.Namespace);
+        Assert.Equal("Animal", association.To.Name);
+        Assert.True(association.IsCollection);
+    }
+
+    [Fact]
+    public void Extract_ListPropertyOfProjectType_ProducesCollectionAssociationWithUnwrappedElementType()
+    {
+        var model = Extract();
+
+        var association = Assert.Single(model.Associations, a =>
+            a.From.Namespace == "SampleProject.Habitats" && a.From.Name == "ZooKeeper" && a.MemberName == "Shifts");
+
+        Assert.Equal("SampleProject.Habitats", association.To.Namespace);
+        Assert.Equal("Season", association.To.Name);
+        Assert.True(association.IsCollection);
+    }
+
+    [Fact]
+    public void Extract_BclTypedProperty_ProducesNoAssociation()
+    {
+        var model = Extract();
+
+        Assert.DoesNotContain(model.Associations, a =>
+            a.From.Namespace == "SampleProject.Habitats" && a.From.Name == "Zoo" && a.MemberName == "Name");
+    }
+
+    [Fact]
+    public void Extract_EnumMembers_DoNotProduceSelfReferentialAssociations()
+    {
+        var model = Extract();
+
+        Assert.DoesNotContain(model.Associations, a => a.From.Name == "AnimalKind");
+    }
+
+    [Fact]
+    public void Extract_CompilerGeneratedBackingField_DoesNotProduceDuplicateAssociation()
+    {
+        var model = Extract();
+
+        var matches = model.Associations.Where(a =>
+            a.From.Namespace == "SampleProject.Animals" && a.From.Name == "AnimalRecord" && a.To.Name == "AnimalKind");
+
+        Assert.Single(matches);
+    }
+
     private static FileEntry FindFile(StructuralModel model, string relativePath) =>
         Assert.Single(model.Files, f => f.Path.EndsWith(relativePath, StringComparison.Ordinal));
 

@@ -24,6 +24,14 @@ public class StructuralModelJsonWriterTests
                     SourceFiles: ["src/Foo.cs"],
                     UnderlyingType: null,
                     Members: null)
+            ],
+            Associations:
+            [
+                new AssociationEntry(
+                    From: new TypeRef("MyApp.Models", "Foo"),
+                    To: new TypeRef("MyApp.Models", "Bar"),
+                    MemberName: "Bar",
+                    IsCollection: false)
             ]);
 
         var json = StructuralModelJsonWriter.ToJson(model);
@@ -41,5 +49,11 @@ public class StructuralModelJsonWriterTests
         Assert.Equal("Foo", type.GetProperty("name").GetString());
         Assert.Equal(JsonValueKind.Null, type.GetProperty("baseType").ValueKind);
         Assert.Equal("src/Foo.cs", type.GetProperty("sourceFiles")[0].GetString());
+
+        var association = root.GetProperty("associations")[0];
+        Assert.Equal("Foo", association.GetProperty("from").GetProperty("name").GetString());
+        Assert.Equal("Bar", association.GetProperty("to").GetProperty("name").GetString());
+        Assert.Equal("Bar", association.GetProperty("memberName").GetString());
+        Assert.False(association.GetProperty("isCollection").GetBoolean());
     }
 }

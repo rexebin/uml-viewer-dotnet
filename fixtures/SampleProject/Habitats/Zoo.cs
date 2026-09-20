@@ -1,8 +1,12 @@
+using SampleProject.Animals;
+
 namespace SampleProject.Habitats;
 
 public class Zoo
 {
     public string Name { get; init; } = string.Empty;
+
+    public Animal[] Animals { get; init; } = [];
 
     public class Ticket
     {

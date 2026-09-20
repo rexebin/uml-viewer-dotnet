@@ -35,6 +35,14 @@ Resolves [Design: JSON schema for structural model (#3)](https://github.com/rexe
       "underlyingType": null,     // e.g. "int", null for non-enums
       "members": null             // [{ "name": "Red", "value": 0 }], null for non-enums
     }
+  ],
+  "associations": [
+    {
+      "from": { "namespace": "MyApp", "name": "Zoo" },
+      "to": { "namespace": "MyApp", "name": "Animal" },
+      "memberName": "Animals",
+      "isCollection": true
+    }
   ]
 }
 ```
@@ -49,8 +57,10 @@ Resolves [Design: JSON schema for structural model (#3)](https://github.com/rexe
 - **Partial types merge**: one type entry per fully-qualified name regardless of how many `partial` declarations exist. `sourceFiles` lists every file the declarations came from (single-file types get a one-element list).
 - **Usings live with files, not types**: top-level `files` array of `{ path, usings }`, separate from `types`. A type's `sourceFiles` cross-reference into it by path. Chosen over a type-level usings field (types don't own usings, files do) and over a separate flat `path -> usings` map (redundant second top-level structure keyed the same way as `files`).
 - **Enum members**: `name` plus the explicit or compiler-resolved integer `value`. No real design trade-off — enums have no other extraction data.
+- **`associations`**: a flat root-level list, alongside `files`/`types`, reusing the existing `TypeRef` (`{ namespace, name }`) shape for both `from` and `to`. One entry per declared (non-inherited, non-compiler-generated) field or property whose type resolves to another project-declared type — method parameters are out of scope for this pass. `from` is the declaring type; `to` is the resolved target type; `memberName` is the field/property name; `isCollection` is `true` when the member's type is an array or implements `IEnumerable<T>` (the association then points at the unwrapped element type `T`, not the collection type itself). Only one flat association kind is recorded — no composition/aggregation/dependency distinction in this pass. A target is only emitted when its containing assembly matches the compilation's own assembly (i.e. it's one of this scan's `types` entries); this is what filters out `string`, `DateTime`, `List<T>` itself, and other BCL/external types.
+- **Known limitation — multi-type-argument collections**: `Dictionary<K,V>` (and similar multi-argument collection types) resolve via `IEnumerable<KeyValuePair<K,V>>`, whose single type argument is `KeyValuePair<K,V>` — not `K` or `V` individually, and `KeyValuePair<K,V>` itself is a BCL type. This means a `Dictionary<K,V>`-typed member will not produce a clean association edge to `K` or `V`. Accepted as a known gap for this pass rather than special-cased.
 
 ## Out of scope for this schema
 
-- Any field/property/parameter referencing another type (associations) — see [CONTEXT.md](../../CONTEXT.md#language).
+- Method-parameter-based associations, and any composition/aggregation/dependency distinction between associations — see [CONTEXT.md](../../CONTEXT.md#language).
 - Accessibility modifiers (public/internal/private) — not part of the recorded MVP scope; add only if a later ticket surfaces a need.
