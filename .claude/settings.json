@@ -1,0 +1,10 @@
+{
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": false,
+    "typescript-lsp@claude-plugins-official": false,
+    "desktop-commander@claude-plugins-official": false
+  },
+  "worktree": {
+    "bgIsolation": "none"
+  }
+}
