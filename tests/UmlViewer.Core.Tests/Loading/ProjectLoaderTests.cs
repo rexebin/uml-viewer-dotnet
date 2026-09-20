@@ -49,6 +49,17 @@ public class ProjectLoaderTests
         await Assert.ThrowsAsync<ProjectLoadException>(() => loader.LoadAsync(missingPath));
     }
 
+    [Fact]
+    public async Task LoadAsync_WithMalformedProjectFile_ThrowsProjectLoadExceptionCarryingWorkspaceFailureMessage()
+    {
+        var loader = new ProjectLoader();
+        var malformedPath = FindFixture("fixtures/MalformedProject/Malformed.csproj");
+
+        var ex = await Assert.ThrowsAsync<ProjectLoadException>(() => loader.LoadAsync(malformedPath));
+
+        Assert.Contains($"Failed to load project '{malformedPath}'", ex.Message);
+    }
+
     private static string FindFixture(string relativePath)
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

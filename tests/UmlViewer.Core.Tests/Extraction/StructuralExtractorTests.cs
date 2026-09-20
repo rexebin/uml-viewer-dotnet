@@ -98,6 +98,42 @@ public class StructuralExtractorTests(SampleProjectCompilationFixture fixture)
     }
 
     [Fact]
+    public void Extract_GenericClassWithReferenceTypeConstraint_CapturesClassConstraint()
+    {
+        var type = FindType(Extract(), "SampleProject.Common", "ReferenceTypeConstrained");
+
+        var parameter = Assert.Single(type.GenericParameters);
+        Assert.Equal(["class"], parameter.Constraints);
+    }
+
+    [Fact]
+    public void Extract_GenericClassWithValueTypeConstraint_CapturesStructConstraint()
+    {
+        var type = FindType(Extract(), "SampleProject.Common", "ValueTypeConstrained");
+
+        var parameter = Assert.Single(type.GenericParameters);
+        Assert.Equal(["struct"], parameter.Constraints);
+    }
+
+    [Fact]
+    public void Extract_GenericClassWithUnmanagedConstraint_CapturesUnmanagedConstraint()
+    {
+        var type = FindType(Extract(), "SampleProject.Common", "UnmanagedConstrained");
+
+        var parameter = Assert.Single(type.GenericParameters);
+        Assert.Equal(["struct", "unmanaged"], parameter.Constraints);
+    }
+
+    [Fact]
+    public void Extract_GenericClassWithNotNullConstraint_CapturesNotNullConstraint()
+    {
+        var type = FindType(Extract(), "SampleProject.Common", "NotNullConstrained");
+
+        var parameter = Assert.Single(type.GenericParameters);
+        Assert.Equal(["notnull"], parameter.Constraints);
+    }
+
+    [Fact]
     public void Extract_GenericClassWithTypeAndConstructorConstraint_CapturesBothConstraints()
     {
         var type = FindType(Extract(), "SampleProject.Habitats", "Cage");
