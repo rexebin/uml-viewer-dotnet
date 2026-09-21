@@ -41,6 +41,28 @@ public class CliRunnerTests
     }
 
     [Fact]
+    public async Task RunAsync_WithHtmlOutputPathArgument_WritesHtmlDiagramToFile()
+    {
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        var outputPath = Path.Combine(Path.GetTempPath(), $"uml-viewer-cli-test-{Guid.NewGuid():N}.html");
+
+        try
+        {
+            var exitCode = await CliRunner.RunAsync([SampleProjectPath, outputPath], stdout, stderr);
+
+            Assert.Equal(0, exitCode);
+            var written = await File.ReadAllTextAsync(outputPath);
+            Assert.Contains("<html", written);
+            Assert.Contains("mermaid", written);
+        }
+        finally
+        {
+            File.Delete(outputPath);
+        }
+    }
+
+    [Fact]
     public async Task RunAsync_WithNoArguments_WritesUsageToStderrAndReturnsNonZero()
     {
         var stdout = new StringWriter();

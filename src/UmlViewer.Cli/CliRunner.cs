@@ -19,10 +19,10 @@ public static class CliRunner
         var csprojPath = args[0];
         var outputPath = args.Length == 2 ? args[1] : null;
 
-        string json;
+        string content;
         try
         {
-            json = await ProjectScanner.ScanToJsonAsync(csprojPath);
+            content = await ScanAsync(csprojPath, outputPath);
         }
         catch (ProjectLoadException ex)
         {
@@ -32,13 +32,21 @@ public static class CliRunner
 
         if (outputPath is null)
         {
-            await stdout.WriteLineAsync(json);
+            await stdout.WriteLineAsync(content);
         }
         else
         {
-            await File.WriteAllTextAsync(outputPath, json);
+            await File.WriteAllTextAsync(outputPath, content);
         }
 
         return Success;
+    }
+
+    private static Task<string> ScanAsync(string csprojPath, string? outputPath)
+    {
+        var isHtmlOutput = outputPath is not null && outputPath.EndsWith(".html", StringComparison.OrdinalIgnoreCase);
+        return isHtmlOutput
+            ? DiagramScanner.ScanToHtmlAsync(csprojPath)
+            : ProjectScanner.ScanToJsonAsync(csprojPath);
     }
 }
