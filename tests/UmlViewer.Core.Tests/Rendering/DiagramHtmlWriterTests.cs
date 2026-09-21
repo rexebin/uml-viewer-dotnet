@@ -18,6 +18,18 @@ public class DiagramHtmlWriterTests
     }
 
     [Fact]
+    public void ToHtml_WithInterfaceAnnotationInMermaidSource_EscapesItSoBrowserDoesNotParseItAsATag()
+    {
+        var model = new StructuralModel(Files: [], Types: [], Associations: []);
+        const string mermaidSource = "classDiagram\n    class Foo\n    <<interface>> Foo";
+
+        var html = DiagramHtmlWriter.ToHtml(model, mermaidSource);
+
+        Assert.DoesNotContain("<<interface>>", html);
+        Assert.Contains("&lt;&lt;interface&gt;&gt;", html);
+    }
+
+    [Fact]
     public void ToHtml_ContainsSerializedModelJsonMatchingJsonOutputMode()
     {
         var model = new StructuralModel(

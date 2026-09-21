@@ -1,3 +1,4 @@
+using System.Net;
 using UmlViewer.Core.Extraction;
 using UmlViewer.Core.Output;
 
@@ -8,6 +9,7 @@ public static class DiagramHtmlWriter
     public static string ToHtml(StructuralModel model, string mermaidSource)
     {
         var modelJson = StructuralModelJsonWriter.ToJson(model);
+        var escapedMermaidSource = WebUtility.HtmlEncode(mermaidSource);
 
         return $$"""
             <!DOCTYPE html>
@@ -27,7 +29,7 @@ public static class DiagramHtmlWriter
             </head>
             <body>
               <div id="diagram" class="mermaid">
-            {{mermaidSource}}
+            {{escapedMermaidSource}}
               </div>
               <div id="detail-panel"></div>
               <script type="application/json" id="model-data">
